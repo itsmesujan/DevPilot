@@ -1,82 +1,70 @@
-// FFI interface for llama.cpp with offline fallback simulator
-import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-
-// Native function type signatures for llama.cpp
-// ignore: camel_case_types
-typedef llama_backend_init_func = Void Function(Int8);
-typedef LlamaBackendInit = void Function(int);
-
-// ignore: camel_case_types
-typedef llama_backend_free_func = Void Function();
-typedef LlamaBackendFree = void Function();
+import 'package:llama_flutter_android/llama_flutter_android.dart';
 
 class LlamaFFI {
   LlamaFFI._private();
   static final LlamaFFI instance = LlamaFFI._private();
 
-  DynamicLibrary? _lib;
+  LlamaController? _controller;
   bool _initialized = false;
-
-  // Bound Native C Functions
-  LlamaBackendInit? _backendInit;
-  LlamaBackendFree? _backendFree;
+  String? _currentModelPath;
 
   Future<void> init() async {
     if (_initialized) return;
-    try {
-      final String libPath = Platform.isWindows
-          ? 'llama.dll'
-          : Platform.isMacOS
-              ? 'libllama.dylib'
-              : 'libllama.so';
-      _lib = DynamicLibrary.open(libPath);
-      
-      _backendInit = _lib!
-          .lookup<NativeFunction<llama_backend_init_func>>('llama_backend_init')
-          .asFunction<LlamaBackendInit>();
-          
-      _backendFree = _lib!
-          .lookup<NativeFunction<llama_backend_free_func>>('llama_backend_free')
-          .asFunction<LlamaBackendFree>();
-
-      _backendInit?.call(0);
+    if (Platform.isAndroid) {
+      _controller = LlamaController();
       _initialized = true;
-    } catch (e) {
-      debugPrint('LlamaFFI: Native library llama.cpp not loaded, using fallback. Error: $e');
+    } else {
+      debugPrint('LlamaFFI: llama_flutter_android only supports Android. Offline fallback used.');
     }
   }
 
   Future<void> loadModel(String path) async {
     await init();
-    if (_lib == null) {
-      debugPrint('LlamaFFI Fallback: Initialized mock model from path: $path');
-      return;
+    if (_controller != null) {
+      if (_currentModelPath == path) return;
+      try {
+        final gpu = await _controller!.detectGpu();
+        await _controller!.loadModel(
+          modelPath: path,
+          threads: 4,
+          contextSize: 2048,
+          gpuLayers: gpu.recommendedGpuLayers,
+        );
+        _currentModelPath = path;
+      } catch (e) {
+        debugPrint('Error loading native model: $e');
+      }
+    } else {
+      debugPrint('LlamaFFI Fallback: Loaded mock model from path: $path');
     }
-    // Real native model loading would call llama_load_model_from_file here
   }
 
-  Stream<String> streamGenerate(String prompt) async* {
-    await init();
-    if (_lib == null) {
-      // Simulate token-by-token stream response for offline run
-      const responseText = 'This is a local inference generation response. The system is running in offline fallback mode because the native llama.cpp library could not be dynamically resolved at runtime.';
-      final tokens = responseText.split(' ');
-      for (final token in tokens) {
-        await Future.delayed(const Duration(milliseconds: 80));
-        yield '$token ';
-      }
-      return;
+  Stream<String> streamGenerate(String prompt) {
+    if (_controller != null && _currentModelPath != null) {
+      return _controller!.generateChat(
+        messages: [ChatMessage(role: 'user', content: prompt)],
+        temperature: 0.7,
+      );
+    } else {
+      return _simulateFallback(prompt);
     }
+  }
 
-    // Real native generation loop would evaluate tokens and yield strings here
-    yield 'Token generated successfully via llama.cpp FFI.';
+  Stream<String> _simulateFallback(String prompt) async* {
+    const responseText = 'This is a local inference generation response. The system is running in offline fallback mode because the native library could not be dynamically resolved at runtime.';
+    final tokens = responseText.split(' ');
+    for (final token in tokens) {
+      await Future.delayed(const Duration(milliseconds: 80));
+      yield '$token ';
+    }
   }
 
   void dispose() {
-    _backendFree?.call();
+    _controller?.dispose();
+    _controller = null;
     _initialized = false;
+    _currentModelPath = null;
   }
 }
-
