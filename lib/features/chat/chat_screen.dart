@@ -16,6 +16,7 @@ import '../../services/storage/app_database.dart';
 import '../../services/memory/memory_service.dart';
 import '../../services/local/local_llm_service.dart';
 import '../../services/voice/voice_pipeline.dart';
+import '../../services/rag/rag_service.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
@@ -88,13 +89,22 @@ class ChatNotifier extends StateNotifier<List<ChatMessage>> {
 
       final systemPrompt = storage.systemPrompt + memoryContext;
 
+      // ── RAG: inject knowledge context ──────────────────────────────────────
+      String ragContext = '';
+      if (RagService.instance.isEnabled && RagService.instance.chunkCount > 0) {
+        ragContext = await RagService.instance.buildContext(text, topK: 5);
+      }
+      final fullSystemPrompt = ragContext.isNotEmpty
+          ? '$ragContext\n\n$systemPrompt'
+          : systemPrompt;
+
       final buffer = StringBuffer();
 
       // Route to local or cloud inference
       final stream = useLocal && LocalLlmService.instance.isModelLoaded
           ? LocalLlmService.instance.generateChat(
               messages: [
-                {'role': 'system', 'content': systemPrompt},
+                {'role': 'system', 'content': fullSystemPrompt},
                 ...state
                     .where((m) => !m.isStreaming)
                     .map((m) => {'role': m.role.name, 'content': m.content}),
@@ -106,7 +116,7 @@ class ChatNotifier extends StateNotifier<List<ChatMessage>> {
               provider: storage.selectedProvider,
               modelId: storage.selectedModelId,
               messages: state.where((m) => !m.isStreaming).toList(),
-              systemPrompt: systemPrompt,
+              systemPrompt: fullSystemPrompt,
               temperature: storage.temperature,
               maxTokens: storage.maxContextTokens,
             );

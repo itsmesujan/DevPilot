@@ -9,6 +9,7 @@ import '../../features/model_hub/model_hub_screen.dart';
 import '../../features/memory/memory_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/study/study_screen.dart';
+import '../../features/knowledge/knowledge_base_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/chat',
@@ -21,6 +22,7 @@ final appRouter = GoRouter(
         GoRoute(path: '/agent', builder: (c, s) => const AgentScreen()),
         GoRoute(path: '/research', builder: (c, s) => const ResearchScreen()),
         GoRoute(path: '/workflow', builder: (c, s) => const WorkflowScreen()),
+        GoRoute(path: '/knowledge', builder: (c, s) => const KnowledgeBaseScreen()),
         GoRoute(path: '/models', builder: (c, s) => const ModelHubScreen()),
         GoRoute(path: '/memory', builder: (c, s) => const MemoryScreen()),
         GoRoute(path: '/settings', builder: (c, s) => const SettingsScreen()),
@@ -39,7 +41,7 @@ class AppShell extends StatelessWidget {
     _TabItem(icon: Icons.mic_none, label: 'Voice', path: '/voice'),
     _TabItem(icon: Icons.smart_toy_outlined, label: 'Agent', path: '/agent'),
     _TabItem(icon: Icons.search, label: 'Research', path: '/research'),
-    _TabItem(icon: Icons.account_tree_outlined, label: 'Flows', path: '/workflow'),
+    _TabItem(icon: Icons.auto_stories_outlined, label: 'Knowledge', path: '/knowledge'),
     _TabItem(icon: Icons.settings_outlined, label: 'Settings', path: '/settings'),
   ];
 
@@ -47,8 +49,8 @@ class AppShell extends StatelessWidget {
     if (location.startsWith('/voice')) return 1;
     if (location.startsWith('/agent')) return 2;
     if (location.startsWith('/research')) return 3;
-    if (location.startsWith('/workflow')) return 4;
-    if (location.startsWith('/settings') || location.startsWith('/models') || location.startsWith('/memory')) return 5;
+    if (location.startsWith('/knowledge')) return 4;
+    if (location.startsWith('/settings') || location.startsWith('/models') || location.startsWith('/memory') || location.startsWith('/workflow') || location.startsWith('/study')) return 5;
     return 0;
   }
 

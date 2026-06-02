@@ -41,6 +41,7 @@ dependencies:
   html: ^0.15.4
   crypto: ^3.0.3
   llama_flutter_android: ^0.2.0
+  pdfx: ^2.6.0
 
 dev_dependencies:
   flutter_test:

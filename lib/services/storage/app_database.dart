@@ -89,8 +89,33 @@ class AppDatabase {
       )
     ''');
 
+    // ── RAG: Vector chunks ────────────────────────────────────────────────────
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS vector_chunks (
+        id TEXT PRIMARY KEY,
+        content TEXT NOT NULL,
+        embedding BLOB NOT NULL,
+        source_id TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        chunk_index INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    // ── RAG: Document registry ────────────────────────────────────────────────
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS documents (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        chunk_count INTEGER NOT NULL DEFAULT 0,
+        indexed_at TEXT NOT NULL
+      )
+    ''');
+
     _db.execute('CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id)');
     _db.execute('CREATE INDEX IF NOT EXISTS idx_memory_type ON memory_items(type)');
+    _db.execute('CREATE INDEX IF NOT EXISTS idx_vector_source ON vector_chunks(source_id)');
   }
 
   // ── Messages ──────────────────────────────────────────────────────────────
@@ -341,5 +366,68 @@ class AppDatabase {
         .select('SELECT * FROM agent_tasks ORDER BY created_at DESC LIMIT ?', [limit])
         .map((r) => Map<String, dynamic>.from(r))
         .toList();
+  }
+
+  // ── RAG: Vector Chunks ────────────────────────────────────────────────────
+  void insertVectorChunk({
+    required String id,
+    required String content,
+    required dynamic embedding, // Uint8List
+    required String sourceId,
+    required String sourceType,
+    required int chunkIndex,
+    required String createdAt,
+  }) {
+    _db.execute(
+      'INSERT OR REPLACE INTO vector_chunks VALUES (?,?,?,?,?,?,?)',
+      [id, content, embedding, sourceId, sourceType, chunkIndex, createdAt],
+    );
+  }
+
+  List<Map<String, dynamic>> getAllVectorChunks({String? sourceId}) {
+    if (sourceId != null) {
+      return _db
+          .select('SELECT * FROM vector_chunks WHERE source_id = ?', [sourceId])
+          .map((r) => Map<String, dynamic>.from(r))
+          .toList();
+    }
+    return _db
+        .select('SELECT * FROM vector_chunks')
+        .map((r) => Map<String, dynamic>.from(r))
+        .toList();
+  }
+
+  void deleteVectorChunksBySource(String sourceId) {
+    _db.execute('DELETE FROM vector_chunks WHERE source_id = ?', [sourceId]);
+  }
+
+  int getVectorChunkCount() {
+    final result = _db.select('SELECT COUNT(*) as cnt FROM vector_chunks');
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  // ── RAG: Documents ─────────────────────────────────────────────────────────
+  void insertDocument({
+    required String id,
+    required String name,
+    required String type,
+    required int chunkCount,
+    required String indexedAt,
+  }) {
+    _db.execute(
+      'INSERT OR REPLACE INTO documents VALUES (?,?,?,?,?)',
+      [id, name, type, chunkCount, indexedAt],
+    );
+  }
+
+  List<Map<String, dynamic>> getAllDocuments() {
+    return _db
+        .select('SELECT * FROM documents ORDER BY indexed_at DESC')
+        .map((r) => Map<String, dynamic>.from(r))
+        .toList();
+  }
+
+  void deleteDocument(String id) {
+    _db.execute('DELETE FROM documents WHERE id = ?', [id]);
   }
 }
