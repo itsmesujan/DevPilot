@@ -10,6 +10,7 @@ import '../../features/memory/memory_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/study/study_screen.dart';
 import '../../features/knowledge/knowledge_base_screen.dart';
+import '../../features/skills/skill_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/chat',
@@ -23,6 +24,7 @@ final appRouter = GoRouter(
         GoRoute(path: '/research', builder: (c, s) => const ResearchScreen()),
         GoRoute(path: '/workflow', builder: (c, s) => const WorkflowScreen()),
         GoRoute(path: '/knowledge', builder: (c, s) => const KnowledgeBaseScreen()),
+        GoRoute(path: '/skills', builder: (c, s) => const SkillScreen()),
         GoRoute(path: '/models', builder: (c, s) => const ModelHubScreen()),
         GoRoute(path: '/memory', builder: (c, s) => const MemoryScreen()),
         GoRoute(path: '/settings', builder: (c, s) => const SettingsScreen()),
@@ -50,7 +52,7 @@ class AppShell extends StatelessWidget {
     if (location.startsWith('/agent')) return 2;
     if (location.startsWith('/research')) return 3;
     if (location.startsWith('/knowledge')) return 4;
-    if (location.startsWith('/settings') || location.startsWith('/models') || location.startsWith('/memory') || location.startsWith('/workflow') || location.startsWith('/study')) return 5;
+    if (location.startsWith('/settings') || location.startsWith('/models') || location.startsWith('/memory') || location.startsWith('/workflow') || location.startsWith('/study') || location.startsWith('/skills')) return 5;
     return 0;
   }
 

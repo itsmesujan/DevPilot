@@ -136,6 +136,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 12),
 
+          // ── Navigate to Custom Skills ─────────────────────────────────────────
+          OutlinedButton.icon(
+            onPressed: () => context.go('/skills'),
+            icon: const Icon(Icons.psychology_outlined),
+            label: const Text('Manage Custom Skills'),
+          ),
+          const SizedBox(height: 12),
+
           // ── Navigate to Study Mode ─────────────────────────────────────────
           OutlinedButton.icon(
             onPressed: () => context.go('/study'),
