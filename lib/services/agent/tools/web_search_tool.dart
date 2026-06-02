@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../models/agent_models.dart';
+import '../../storage/storage_service.dart';
 
 /// Web search tool using DuckDuckGo API (free, no API key required)
 class WebSearchTool {
@@ -122,12 +123,10 @@ class BraveSearchTool {
     final count = (args['count'] as num?)?.toInt() ?? 10;
     final lang = args['search_lang'] as String? ?? 'en';
 
-    // Note: API key should be stored securely
-    // This is a placeholder - actual implementation would get from storage
-    const apiKey = ''; // Get from StorageService
+    final apiKey = await StorageService.instance.getApiKey('brave') ?? '';
 
     if (apiKey.isEmpty) {
-      return 'Brave Search API key not configured. Use web_search instead.';
+      return 'Brave Search API key not configured. Go to Settings → API Keys and add your Brave key, or use web_search instead.';
     }
 
     final url = Uri.parse(
@@ -201,10 +200,10 @@ class TavilySearchTool {
     final maxResults = (args['max_results'] as num?)?.toInt() ?? 5;
     final includeAnswer = args['include_answer'] as bool? ?? true;
 
-    const apiKey = ''; // Get from StorageService
+    final apiKey = await StorageService.instance.getApiKey('tavily') ?? '';
 
     if (apiKey.isEmpty) {
-      return 'Tavily API key not configured. Use web_search instead.';
+      return 'Tavily API key not configured. Go to Settings → API Keys and add your Tavily key, or use web_search instead.';
     }
 
     try {

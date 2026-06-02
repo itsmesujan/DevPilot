@@ -24,7 +24,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _providers = [
     'openai', 'anthropic', 'gemini', 'mistral',
     'deepseek', 'groq', 'together', 'kimi', 'openrouter', 'ollama',
-    'huggingface',
+    'huggingface', 'brave', 'tavily',
   ];
 
   @override
@@ -257,6 +257,8 @@ class _ApiKeyTileState extends State<_ApiKeyTile> {
       case 'openrouter': return 'OpenRouter';
       case 'ollama': return 'Ollama URL';
       case 'huggingface': return 'Hugging Face';
+      case 'brave': return 'Brave Search';
+      case 'tavily': return 'Tavily Search';
       default: return provider.isNotEmpty ? (provider[0].toUpperCase() + provider.substring(1)) : provider;
     }
   }

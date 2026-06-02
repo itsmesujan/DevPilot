@@ -35,7 +35,7 @@ class BuiltinTools {
     // Text processing tools
     registry.register(TextProcessorTool.definition);
 
-    // Knowledge/Note tools (placeholder - will be implemented with memory feature)
+    // Knowledge/Note tools — backed by AppDatabase & MemoryService
     registry.register(_createNoteTool());
     registry.register(_createKnowledgeSearchTool());
   }
