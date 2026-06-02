@@ -9,6 +9,10 @@ import 'url_reader_tool.dart';
 import 'calculator_tool.dart';
 import 'datetime_tool.dart';
 import 'text_processor_tool.dart';
+import 'file_tools.dart';
+import 'code_tools.dart';
+import 'system_tools.dart';
+import 'api_tools.dart';
 
 /// Initializes all built-in tools and registers them with the ToolRegistry
 class BuiltinTools {
@@ -38,6 +42,12 @@ class BuiltinTools {
     // Knowledge/Note tools — backed by AppDatabase & MemoryService
     registry.register(_createNoteTool());
     registry.register(_createKnowledgeSearchTool());
+
+    // Phase 2: Expanded Ecosystem Tools
+    FileTools.registerAll();
+    CodeTools.registerAll();
+    SystemTools.registerAll();
+    ApiTools.registerAll();
   }
 
   /// Create note tool

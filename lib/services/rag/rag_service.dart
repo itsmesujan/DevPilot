@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../storage/app_database.dart';
 import 'vector_store.dart';
 
@@ -19,6 +22,10 @@ class RagService {
   bool get isEnabled => _enabled;
   set enabled(bool v) => _enabled = v;
 
+  // MiniLM Path
+  String? _miniLmPath;
+  String? get miniLmPath => _miniLmPath;
+
   // Vocabulary size for TF-IDF embedding
   final int _vocabSize = 384;
 
@@ -30,6 +37,26 @@ class RagService {
   /// similar texts produce similar vectors without requiring a loaded model.
   /// When a real MiniLM/Nomic model is available, this is replaced via
   /// [overrideEmbedFunction].
+  
+  /// Extracts the bundled MiniLM model from assets if it hasn't been extracted yet.
+  Future<void> initializeMiniLM() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final modelFile = File(p.join(dir.path, 'models', 'all-MiniLM-L6-v2-Q4_K_M.gguf'));
+      if (!await modelFile.exists()) {
+        if (!await modelFile.parent.exists()) {
+          await modelFile.parent.create(recursive: true);
+        }
+        final data = await rootBundle.load('assets/models/all-MiniLM-L6-v2-Q4_K_M.gguf');
+        await modelFile.writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+      }
+      _miniLmPath = modelFile.path;
+      debugPrint('MiniLM model ready at $_miniLmPath');
+    } catch (e) {
+      debugPrint('Error extracting MiniLM: $e');
+    }
+  }
+
   List<double> Function(String)? _embeddingOverride;
 
   void overrideEmbedFunction(List<double> Function(String text) fn) {
