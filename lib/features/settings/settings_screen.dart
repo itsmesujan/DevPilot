@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/storage/storage_service.dart';
 import '../../services/ai/model_catalog.dart';
+import '../../services/mcp/mcp_service.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
@@ -141,9 +142,99 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: const Icon(Icons.school_outlined),
             label: const Text('Enter Study Mode'),
           ),
+          const SizedBox(height: 24),
+
+          // ── MCP Servers ──────────────────────────────────────────────────
+          const _SectionHeader('External MCP Servers'),
+          _McpServerSection(),
           const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+}
+
+class _McpServerSection extends StatefulWidget {
+  @override
+  State<_McpServerSection> createState() => _McpServerSectionState();
+}
+
+class _McpServerSectionState extends State<_McpServerSection> {
+  final _nameCtrl = TextEditingController();
+  final _urlCtrl = TextEditingController();
+  bool _isConnecting = false;
+
+  Future<void> _connect() async {
+    final name = _nameCtrl.text.trim();
+    final url = _urlCtrl.text.trim();
+    if (name.isEmpty || url.isEmpty) return;
+
+    setState(() => _isConnecting = true);
+    try {
+      await McpService.instance.connectToServer(name, url);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Connected to $name MCP server!')),
+        );
+        _nameCtrl.clear();
+        _urlCtrl.clear();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error connecting: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isConnecting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connections = McpService.instance.connections;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (connections.isNotEmpty) ...[
+          for (final conn in connections)
+            ListTile(
+              leading: const Icon(Icons.hub, color: Colors.green),
+              title: Text(conn.name),
+              subtitle: Text('${conn.baseUrl}\n${conn.tools.length} tools registered'),
+              isThreeLine: true,
+            ),
+          const SizedBox(height: 16),
+        ],
+        Row(
+          children: [
+            Expanded(
+              flex: 1,
+              child: TextField(
+                controller: _nameCtrl,
+                decoration: const InputDecoration(labelText: 'Server Name', hintText: 'e.g. Postgres'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: _urlCtrl,
+                decoration: const InputDecoration(labelText: 'SSE URL', hintText: 'http://localhost:8000/sse'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: _isConnecting ? null : _connect,
+          icon: _isConnecting
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.add_link),
+          label: const Text('Connect MCP Server'),
+        ),
+      ],
     );
   }
 }
