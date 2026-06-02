@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:uuid/uuid.dart';
 import '../../../models/agent_models.dart';
 import '../../../models/skill_models.dart';
-import '../agent_service.dart';
+import '../agent_orchestrator.dart';
 import '../skills/skill_manager.dart';
 
 /// Represents a specialized sub-agent spawned for a specific task.

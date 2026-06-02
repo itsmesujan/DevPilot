@@ -129,7 +129,7 @@ class _SkillScreenState extends State<SkillScreen> {
                           onPressed: () => _showSkillEditor(skill),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red400),
+                          icon: Icon(Icons.delete_outline, color: Colors.red[400]),
                           onPressed: () => _deleteSkill(skill.id),
                         ),
                       ],

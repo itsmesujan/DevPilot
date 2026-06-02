@@ -27,7 +27,7 @@ class McpService {
   Future<void> disconnectAll() async {
     for (final conn in _connections) {
       for (final tool in conn.tools) {
-        ToolRegistry.instance.remove(tool.name);
+        ToolRegistry.instance.unregister(tool.name);
       }
     }
     _connections.clear();
