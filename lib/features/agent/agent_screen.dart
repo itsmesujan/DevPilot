@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/agent/agent_orchestrator.dart';
 import '../../models/agent_models.dart';
 
@@ -99,6 +100,11 @@ class _AgentScreenState extends State<AgentScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
+          IconButton(
+            icon: const Icon(Icons.groups),
+            tooltip: 'Agent Council',
+            onPressed: () => context.go('/council'),
+          ),
         ],
       ),
       body: Column(
