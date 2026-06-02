@@ -6,7 +6,7 @@ import '../../services/storage/app_database.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
-enum MemoryFilter { all, episodic, semantic, profile }
+enum MemoryFilter { all, episodic, semantic, profile, note }
 
 final memoryFilterProvider =
     StateProvider<MemoryFilter>((ref) => MemoryFilter.all);
@@ -193,6 +193,7 @@ class _MemoryTile extends StatelessWidget {
       'episodic' => (Icons.history, theme.colorScheme.primary),
       'semantic' => (Icons.psychology, theme.colorScheme.secondary),
       'profile' => (Icons.person_outline, Colors.orange),
+      'note' => (Icons.description, Colors.tealAccent),
       _ => (Icons.notes, Colors.white38),
     };
     return Icon(icon, color: color, size: 20);

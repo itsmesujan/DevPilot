@@ -52,8 +52,8 @@ class MemoryService {
   }
 
   // ── Search ────────────────────────────────────────────────────────────────
-  Future<List<MemoryItem>> search(String query, {int topK = 5}) async {
-    final allRows = AppDatabase.instance.getMemories(limit: 200);
+  Future<List<MemoryItem>> search(String query, {String? type, int topK = 5}) async {
+    final allRows = AppDatabase.instance.getMemories(type: type, limit: 200);
     final scored = allRows.map((r) {
       final item = MemoryItem(
         id: r['id'] as String,

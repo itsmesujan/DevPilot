@@ -116,6 +116,14 @@ class AppDatabase {
     return rows.map((r) => Map<String, dynamic>.from(r)).toList();
   }
 
+  List<Map<String, dynamic>> searchMessages(String query, {int limit = 50}) {
+    final rows = _db.select(
+      'SELECT * FROM messages WHERE content LIKE ? ORDER BY created_at DESC LIMIT ?',
+      ['%$query%', limit],
+    );
+    return rows.map((r) => Map<String, dynamic>.from(r)).toList();
+  }
+
   void deleteSession(String sessionId) {
     _db.execute('DELETE FROM messages WHERE session_id = ?', [sessionId]);
     _db.execute('DELETE FROM sessions WHERE id = ?', [sessionId]);

@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'package:uuid/uuid.dart';
 import '../../../models/agent_models.dart';
+import '../../storage/app_database.dart';
+import '../../memory/memory_service.dart';
 import 'tool_registry.dart';
 import 'web_search_tool.dart';
 import 'url_reader_tool.dart';
@@ -64,14 +68,27 @@ class BuiltinTools {
         final content = args['content'] as String;
         final tags = args['tags'] as String? ?? '';
 
-        // TODO: Integrate with actual note storage
-        // For now, just acknowledge the note
-        return '''Note created successfully!
+        final id = const Uuid().v4();
+        final noteContent = 'Title: $title\nContent: $content';
+        final tagList = tags.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+        final metadata = jsonEncode({
+          'title': title,
+          'tags': tagList,
+        });
+
+        AppDatabase.instance.insertMemory(
+          id: id,
+          content: noteContent,
+          type: 'note',
+          metadata: metadata,
+          createdAt: DateTime.now().toIso8601String(),
+        );
+
+        return '''Note created successfully and saved in database!
+• ID: $id
 • Title: $title
 • Content: ${content.length > 100 ? '${content.substring(0, 100)}...' : content}
-• Tags: ${tags.isEmpty ? 'none' : tags}
-
-Note: Full note storage integration coming soon.''';
+• Tags: ${tagList.isEmpty ? 'none' : tagList.join(', ')}''';
       },
     );
   }
@@ -100,11 +117,52 @@ Note: Full note storage integration coming soon.''';
         final query = args['query'] as String;
         final type = args['type'] as String? ?? 'all';
 
-        // TODO: Integrate with actual knowledge base
-        return '''Knowledge search for: "$query" (type: $type)
+        final results = StringBuffer();
+        results.writeln('Search results for query: "$query" (type: $type)\n');
 
-Note: Knowledge base integration coming soon.
-For now, use web_search to find information online.''';
+        bool foundAny = false;
+
+        if (type == 'notes' || type == 'all') {
+          final notes = await MemoryService.instance.search(query, type: 'note', topK: 10);
+          if (notes.isNotEmpty) {
+            foundAny = true;
+            results.writeln('=== Saved Notes ===');
+            for (int i = 0; i < notes.length; i++) {
+              final note = notes[i];
+              results.writeln('${i + 1}. ${note.content}');
+              results.writeln('   Created: ${note.createdAt.toIso8601String().split('T')[0]}');
+              results.writeln();
+            }
+          }
+        }
+
+        if (type == 'conversations' || type == 'all') {
+          final messages = AppDatabase.instance.searchMessages(query, limit: 10);
+          if (messages.isNotEmpty) {
+            foundAny = true;
+            results.writeln('=== Chat Conversations ===');
+            for (int i = 0; i < messages.length; i++) {
+              final msg = messages[i];
+              final role = msg['role'] as String;
+              final content = msg['content'] as String;
+              final sessionId = msg['session_id'] as String;
+              final date = (msg['created_at'] as String).split('T')[0];
+
+              results.writeln('${i + 1}. [$role in Session $sessionId] ($date)');
+              results.writeln('   "${content.length > 150 ? '${content.substring(0, 150)}...' : content}"');
+              results.writeln();
+            }
+          }
+        }
+
+        if (!foundAny) {
+          results.writeln('No matching notes or conversations found in the local database.');
+          if (type == 'all' || type == 'notes') {
+            results.writeln('\nTip: You can use the "create_note" tool to save notes first.');
+          }
+        }
+
+        return results.toString();
       },
     );
   }
