@@ -34,8 +34,9 @@ class WhisperFFI {
       return 'Transcribed speech from audio file: $audioPath using native OS recognition engine.';
     }
     
-    await Future.delayed(const Duration(seconds: 1));
-    return 'Offline Speech Transcription: On-device speech recognition was simulated via fallback.';
+    // speech_to_text does not support file-path transcription in its high-level API.
+    // Return a descriptive fallback immediately without blocking the thread.
+    return 'Offline Speech Transcription: Use the microphone voice pipeline for on-device recognition.';
   }
 
   void dispose() {

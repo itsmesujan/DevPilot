@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/storage/storage_service.dart';
 import '../../services/ai/model_catalog.dart';
 import '../../services/mcp/mcp_service.dart';
@@ -43,7 +45,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      backgroundColor: AppColors.bgDeep,
+      appBar: AppBar(
+        title: Text('Settings', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18)),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

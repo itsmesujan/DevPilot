@@ -5,11 +5,13 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'services/storage/storage_service.dart';
 import 'services/storage/app_database.dart';
+import 'services/agent/skills/skill_manager.dart';
+import 'services/rag/rag_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock to portrait + portrait-up on phones
+  // Lock orientation — support portrait + landscape
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -17,25 +19,35 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
-  // Init core services before UI
+  // Status bar style
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+
+  // Init core services
   await AppDatabase.instance.init();
   await StorageService.instance.init();
+
+  // Init async services in background
+  SkillManager.instance.initialize().catchError((_) {});
+  RagService.instance.initializeMiniLM().catchError((_) {});
 
   runApp(const ProviderScope(child: DevPilotApp()));
 }
 
-class DevPilotApp extends ConsumerWidget {
+class DevPilotApp extends StatelessWidget {
   const DevPilotApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = StorageService.instance.darkMode;
+  Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'DevPilot Edge',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      // Always use dark theme — the premium OLED dark experience
+      theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
-      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+      themeMode: ThemeMode.dark,
       routerConfig: appRouter,
     );
   }

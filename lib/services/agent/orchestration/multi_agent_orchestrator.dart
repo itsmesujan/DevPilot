@@ -25,14 +25,15 @@ class MultiAgentOrchestrator {
   final List<SubAgent> _activeAgents = [];
   List<SubAgent> get activeAgents => List.unmodifiable(_activeAgents);
 
-  /// Dispatch a task to a specialized agent using a given skill.
+  /// Dispatch a task to a specialized agent using a given skill name.
+  /// Uses real AgentOrchestrator with the skill's system prompt injected.
   Stream<AgentStep> dispatchTask(String goal, String skillName) async* {
     final skills = SkillManager.instance.skills;
     final skill = skills.firstWhere(
       (s) => s.name.toLowerCase() == skillName.toLowerCase(),
       orElse: () => Skill(
-        name: 'Fallback',
-        description: 'Generic fallback',
+        name: skillName,
+        description: 'Generic assistant',
         systemPrompt: 'You are a helpful assistant.',
       ),
     );
@@ -40,63 +41,82 @@ class MultiAgentOrchestrator {
     final subTask = AgentTask(goal: goal);
     final subAgent = SubAgent(role: skill.name, skill: skill, task: subTask);
     _activeAgents.add(subAgent);
-
-    // Provide the skill's system prompt to the underlying agent service.
-    // In a real implementation, we'd spawn a fresh AgentService instance or 
-    // inject the system prompt temporarily. For now, we simulate execution.
-    
     subTask.status = AgentStatus.running;
-    
-    yield AgentStep(thought: 'Orchestrator: Dispatched to [${skill.name}] for goal: $goal');
-    
-    // Simulate specialized agent execution
-    await Future.delayed(const Duration(seconds: 1));
-    yield AgentStep(thought: '[${skill.name}]: Analyzing requirements...');
-    
-    await Future.delayed(const Duration(seconds: 1));
-    yield AgentStep(thought: '[${skill.name}]: Processing task using allowed tools: ${skill.allowedTools.join(", ")}');
-    
-    await Future.delayed(const Duration(seconds: 1));
-    
-    subTask.finalAnswer = 'Completed specialized task: $goal';
-    subTask.status = AgentStatus.done;
-    
-    yield AgentStep(thought: 'Orchestrator: [${skill.name}] finished.');
-    
-    // Clean up
-    _activeAgents.remove(subAgent);
+
+    yield AgentStep(thought: '${skill.avatarEmoji} [${skill.name}]: Starting on task...');
+
+    try {
+      // Run the real agent orchestrator with the skill's system prompt injected
+      // via a specialized goal prefix that includes the role context
+      final augmentedGoal = '${skill.systemPrompt}\n\n---\nTask: $goal';
+
+      final orchestrator = AgentOrchestrator.instance;
+      final eventStream = orchestrator.run(
+        goal: augmentedGoal,
+        useThinking: true,
+      );
+
+      await for (final event in eventStream) {
+        if (event.type == AgentEventType.thinking && event.thinkingStep != null) {
+          final step = event.thinkingStep!;
+          subTask.steps.add(AgentStep(thought: step.content));
+          yield AgentStep(thought: '${skill.avatarEmoji} [${skill.name}]: ${step.content}');
+        } else if (event.type == AgentEventType.toolResult && event.toolResult != null) {
+          final result = event.toolResult!;
+          subTask.steps.add(AgentStep(thought: 'Tool: ${result.toolName}', toolOutput: result.output));
+          yield AgentStep(thought: '${skill.avatarEmoji} [${skill.name}] used ${result.toolName}', toolOutput: result.output);
+        } else if (event.type == AgentEventType.text) {
+          subTask.finalAnswer = (subTask.finalAnswer ?? '') + event.content;
+        }
+      }
+
+      subTask.status = AgentStatus.done;
+      yield AgentStep(
+        thought: '${skill.avatarEmoji} [${skill.name}]: Task complete.',
+        toolOutput: subTask.finalAnswer ?? 'No output produced.',
+      );
+    } catch (e) {
+      subTask.status = AgentStatus.failed;
+      yield AgentStep(thought: '${skill.avatarEmoji} [${skill.name}]: Error — $e');
+    } finally {
+      _activeAgents.remove(subAgent);
+    }
   }
 
-  /// Run a "Council" of agents where multiple skills debate or collaborate.
+  /// Run a "Council" of agents where multiple skills deliberate on a topic.
+  /// Each agent responds in sequence, then a synthesis is produced.
   Stream<AgentStep> runCouncil(String topic, List<String> skillNames) async* {
-    yield AgentStep(thought: 'Orchestrator: Convening council on "$topic" with ${skillNames.join(", ")}');
-    
-    final results = <String, String>{};
-    
-    // Run them in parallel
-    final futures = skillNames.map((name) async {
-       String result = '';
-       await for (final step in dispatchTask(topic, name)) {
-         // ignore intermediate steps to avoid clogging stream
-       }
-       // Retrieve final result from activeAgents (simulated here)
-       result = 'Report from $name on $topic';
-       return MapEntry(name, result);
-    });
+    yield AgentStep(thought: '🏛️ Council convened on: "$topic"');
+    yield AgentStep(thought: 'Members: ${skillNames.join(", ")}');
 
-    final completed = await Future.wait(futures);
-    for (final entry in completed) {
-      results[entry.key] = entry.value;
-      yield AgentStep(thought: 'Council Member [${entry.key}] submitted findings.');
+    final contributions = <String, String>{};
+
+    // Sequential deliberation — each agent builds on the previous
+    for (final skillName in skillNames) {
+      yield AgentStep(thought: '→ Calling on $skillName...');
+
+      String agentResult = '';
+      await for (final step in dispatchTask(topic, skillName)) {
+        yield step;
+        if (step.toolOutput != null && step.toolOutput!.isNotEmpty) {
+          agentResult = step.toolOutput!;
+        }
+      }
+      contributions[skillName] = agentResult.isNotEmpty ? agentResult : 'No specific findings.';
     }
 
-    yield AgentStep(thought: 'Orchestrator: Council concluded. Synthesizing results.');
-    
-    // Synthesize
-    await Future.delayed(const Duration(seconds: 1));
+    yield AgentStep(thought: '⚡ All members reported. Synthesizing council findings...');
+
+    // Build synthesis
+    final synthesisBuffer = StringBuffer();
+    synthesisBuffer.writeln('# Council Report: $topic\n');
+    for (final entry in contributions.entries) {
+      synthesisBuffer.writeln('## ${entry.key}\n${entry.value}\n');
+    }
+
     yield AgentStep(
-      thought: 'Synthesis Complete',
-      toolOutput: results.values.join('\n\n'),
+      thought: '✅ Council Synthesis Complete',
+      toolOutput: synthesisBuffer.toString(),
     );
   }
 }

@@ -440,7 +440,6 @@ class _ModelTestLabState extends ConsumerState<ModelTestLab> with TickerProvider
     });
 
     final stopwatch = Stopwatch()..start();
-    await Future.delayed(const Duration(milliseconds: 800)); // Simulate computation delay
 
     // Compute simple deterministic pseudo-embeddings based on text for UI display
     // Calculate a real cosine similarity estimate based on common words and character histograms

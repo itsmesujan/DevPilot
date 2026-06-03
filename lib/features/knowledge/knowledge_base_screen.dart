@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/rag/document_ingester.dart';
 import '../../services/rag/rag_service.dart';
 
@@ -193,14 +195,13 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen> {
     final ragEnabled = ref.watch(ragEnabledProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: AppColors.bgDeep,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D1A),
-        title: const Text('Knowledge Base', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.bgDeep,
+        title: Text('Knowledge Base', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
-          // RAG toggle
           Row(children: [
-            const Text('RAG', style: TextStyle(fontSize: 12, color: Colors.white54)),
+            Text('RAG', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
             const SizedBox(width: 4),
             Switch(
               value: ragEnabled,
@@ -208,7 +209,6 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen> {
                 ref.read(ragEnabledProvider.notifier).state = v;
                 RagService.instance.enabled = v;
               },
-              activeTrackColor: const Color(0xFF7C3AED),
             ),
           ]),
           const SizedBox(width: 8),
@@ -224,14 +224,13 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_ingestStatus, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(_ingestStatus, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12)),
               const SizedBox(height: 6),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: _ingestProgress,
-                  backgroundColor: Colors.white12,
-                  color: const Color(0xFF7C3AED),
+                  backgroundColor: AppColors.bgCard,
                   minHeight: 6,
                 ),
               ),
@@ -284,10 +283,10 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen> {
           const SizedBox(height: 8),
           FloatingActionButton.extended(
             heroTag: 'file',
-            backgroundColor: const Color(0xFF7C3AED),
+            backgroundColor: AppColors.primary,
             onPressed: _isIngesting ? null : _pickAndIngestFile,
             icon: const Icon(Icons.upload_file),
-            label: const Text('Add File'),
+            label: Text('Add File', style: GoogleFonts.inter()),
           ),
         ],
       ),

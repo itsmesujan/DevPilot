@@ -75,6 +75,23 @@ enum ThinkingType {
   error,            // Error handling
 }
 
+extension ThinkingTypeX on ThinkingType {
+  String get displayName => switch (this) {
+    ThinkingType.understanding => 'UNDERSTANDING',
+    ThinkingType.planning => 'PLANNING',
+    ThinkingType.toolPlanning => 'TOOL STRATEGY',
+    ThinkingType.reasoning => 'REASONING',
+    ThinkingType.toolDecision => 'TOOL DECISION',
+    ThinkingType.toolExecution => 'EXECUTING',
+    ThinkingType.toolResult => 'TOOL RESULT',
+    ThinkingType.reflection => 'REFLECTION',
+    ThinkingType.synthesis => 'SYNTHESIS',
+    ThinkingType.finalAnswer => 'ANSWER',
+    ThinkingType.error => 'ERROR',
+  };
+}
+
+
 /// Represents a single thinking step with metadata
 class ThinkingStep {
   final String id;

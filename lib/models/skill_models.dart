@@ -6,6 +6,7 @@ class Skill {
   final String description;
   final String systemPrompt;
   final List<String> allowedTools;
+  final String avatarEmoji;
 
   Skill({
     String? id,
@@ -13,6 +14,7 @@ class Skill {
     required this.description,
     required this.systemPrompt,
     this.allowedTools = const [],
+    this.avatarEmoji = '🤖',
   }) : id = id ?? const Uuid().v4();
 
   factory Skill.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class Skill {
       description: json['description'] as String? ?? '',
       systemPrompt: json['systemPrompt'] as String,
       allowedTools: (json['allowedTools'] as List?)?.cast<String>() ?? [],
+      avatarEmoji: json['avatarEmoji'] as String? ?? '🤖',
     );
   }
 
@@ -31,5 +34,6 @@ class Skill {
         'description': description,
         'systemPrompt': systemPrompt,
         'allowedTools': allowedTools,
+        'avatarEmoji': avatarEmoji,
       };
 }
