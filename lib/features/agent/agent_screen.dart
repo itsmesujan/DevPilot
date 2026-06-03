@@ -25,6 +25,7 @@ class _AgentScreenState extends State<AgentScreen> {
 
   bool _isRunning = false;
   String _finalAnswer = '';
+  String? _lastError;
   final List<AgentEvent> _events = [];
   final List<ThinkingStep> _thinkingSteps = [];
   final List<ToolResult> _toolResults = [];
@@ -45,7 +46,6 @@ class _AgentScreenState extends State<AgentScreen> {
       _thinkingSteps.clear();
       _toolResults.clear();
       _finalAnswer = '';
-      _currentStatus = 'Initializing agent...';
     });
 
     try {
@@ -78,7 +78,10 @@ class _AgentScreenState extends State<AgentScreen> {
         }
       }
     } catch (e) {
-      if (mounted) setState(() => _currentStatus = 'Error: $e');
+      if (mounted) setState(() {
+        _lastError = 'Agent error: $e';
+        _isRunning = false;
+      });
     } finally {
       if (mounted) setState(() => _isRunning = false);
     }
@@ -178,26 +181,45 @@ class _AgentScreenState extends State<AgentScreen> {
 
           // Events / Timeline
           Expanded(
-            child: _events.isEmpty && !_isRunning
-                ? _AgentEmptyState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _events.length + (_finalAnswer.isNotEmpty ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == _events.length && _finalAnswer.isNotEmpty) {
-                        return _FinalAnswerCard(answer: _finalAnswer);
-                      }
-                      final event = _events[index];
-                      if (event.thinkingStep != null) {
-                        return _ThinkingStepCard(step: event.thinkingStep!, index: index);
-                      }
-                      if (event.toolResult != null) {
-                        return _ToolResultCard(result: event.toolResult!);
-                      }
-                      return _StatusCard(content: event.content, isLast: index == _events.length - 1 && _isRunning);
-                    },
-                  ),
+            child: _lastError != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: GlassCard(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 40),
+                            const SizedBox(height: 12),
+                            Text(_lastError!, style: GoogleFonts.inter(color: AppColors.error, fontSize: 13), textAlign: TextAlign.center),
+                            const SizedBox(height: 16),
+                            GradientButton(label: 'Try Again', icon: Icons.refresh_rounded, onPressed: () => setState(() => _lastError = null)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                : _events.isEmpty && !_isRunning
+                    ? _AgentEmptyState()
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _events.length + (_finalAnswer.isNotEmpty ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == _events.length && _finalAnswer.isNotEmpty) {
+                            return _FinalAnswerCard(answer: _finalAnswer);
+                          }
+                          final event = _events[index];
+                          if (event.thinkingStep != null) {
+                            return _ThinkingStepCard(step: event.thinkingStep!, index: index);
+                          }
+                          if (event.toolResult != null) {
+                            return _ToolResultCard(result: event.toolResult!);
+                          }
+                          return _StatusCard(content: event.content, isLast: index == _events.length - 1 && _isRunning);
+                        },
+                      ),
           ),
         ],
       ),
